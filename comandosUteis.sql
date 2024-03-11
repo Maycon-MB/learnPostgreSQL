@@ -128,4 +128,75 @@ MAX(unit_price) AS "Maximo_Preco" FROM products;
 
 SELECT * FROM customers;
 
+SELECT country, COUNT(*) FROM customers	GROUP BY country ORDER BY COUNT(*) DESC;
+
+-- 2. Faça um agrupamento para descobrir a quantidade total de clientes por title.
+
+SELECT * FROM customers;
+
+SELECT contact_title as title, COUNT(*) FROM customers GROUP BY title ORDER BY COUNT(*) DESC;
+
+-- 3. Faça um agrupamento para descobrir a soma total de estoque por supplier_id.
+
+SELECT * FROM products;
+
+SELECT supplier_id, SUM(units_in_stock) FROM products GROUP BY supplier_id;
+
+-- 4. Faça um agrupamento para descobrir a média de unit_price por supplier_id.
+
+SELECT supplier_id, AVG(unit_price) AS "Média" FROM products GROUP BY supplier_id;
+
+-- GROUP BY + WHERE vs GROUP BY + HAVING
+
+/* 1. Faça um agrupamento para descobrir a quantidade total de clientes por country. 
+O seu agrupamento deve considerar apenas os clientes de contact_title = 'Owner' */
+
+SELECT * FROM customers;
+
+SELECT country, COUNT(*) FROM customers WHERE contact_title = 'Owner' GROUP BY country ORDER BY COUNT(*) DESC;
+
+/* 2. Faça um agrupamento para descobrir a quantidade total de clientes por country. 
+A query resultante deve conter apenas os países que têm mais de 10 clientes. */
+
+SELECT * FROM customers;
+
+SELECT country, COUNT(*) FROM customers GROUP BY country HAVING COUNT(*) >= 10 ORDER BY COUNT(*) DESC;
+
+-- ** JOINS **
+
+-- INTRODUÇÃO
+
+/* Os Joins no SQL têm como objetivo relacionar as diferentes tabelas dos nossos bancos de dados. Com eles, conseguimos dar um passo
+além das nossas análises, permitindo cruzar as informações das diferentes tabelas. */
+
+-- Para criar Joins, o primeiro passo é descobrir qual coluna as tabelas que queremos relacionar têm em comum.
+-- Será através dessas colunas que o SQL saberá a forma como ele deve cruzar os dados.
+
+-- Exemplo: as tabelas 'products' e 'order-_details' possuem a coluna 'product_id' em comum.
+
+-- É daí que vem os conceitos de CHAVE PRIMÁRIA e CHAVE ESTRANGEIRA.
+
+-- SINTAXE
+
+-- A sintaxe mais simples para relacionar 2 tabelas (que tenham a 'coluna 1' em comum) é a seguinte:
+
+SELECT * FROM Tabela_A LEFT JOIN Tabela_B ON Tabela_A.Coluna1 = Tabela_B.Coluna1
+
+-- Com a opção acima, estamos trazendo para uma mesma tabela TODAS as colunas das duas tabelas relacionadas, isso porque usamos o *.
+
+-- Caso a gente queira escolher colunas específicas para verificar na consulta final, seguimos a seguinte estrutura.
+
+SELECT 
+    Tabela_A.Coluna1, 
+    Tabela_A.Coluna2, 
+    Tabela_A.Coluna3, 
+    Tabela_B.Coluna4 
+FROM 
+    Tabela_A
+LEFT JOIN Tabela_B
+ON Tabela_A.Coluna1 = Tabela_B.Coluna1
+
+-- Ou usando Alias (Opção 2)
+
+SELECT ta.Coluna1, ta.Coluna2, ta.Coluna3, tb.Coluna4 FROM Tabela_A AS ta LEFT JOIN Tabela_B ta on ta.Coluna1 = tb.Coluna1
 
