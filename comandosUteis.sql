@@ -723,7 +723,7 @@ end $$;
 
 -- ## User-Defined Functions
 
--- Criando uma Functions
+-- ** Criando uma Function
 /* Além das funções de números, textos, datas, agregação, presentes no SQL, também é possível criar funções personalizadas que realizam
 algum tipo de cálculo. A essas funções damos o nome de User_Defined Functions. */
 
@@ -733,11 +733,213 @@ algum tipo de cálculo. A essas funções damos o nome de User_Defined Functions
 
 create or replace function nome_funcao(parametros)
     returns tipo_dado
-    language plpsql
+    language plpgsql
+as
+$$ 
+declare
+    declaracao de variaveis
+begin
+    codigos
+end $$;
+
+*/
+
+/* Exemplo: Crie uma Function que analisa o estoque dos produtos. 
+Essa Function deve retornar o total de produtos que possuem um total de estoque entre um estoque mínimo e um estoque máximo, 
+ambos definidos pelo usuário da Function */
+
+select * from products;
+
+create or replace function analise_estoque(estoque_min int, estoque_max int)
+returns int
+language plpgsql
+as
+$$
+
+declare
+	contagem_estoque int;
+
+begin
+	contagem_estoque = (select count(*) from products where units_in_stock between estoque_min and estoque_max);
+	return contagem_estoque;
+
+end $$;
+
+select count(*) - analise_estoque(10, 50) from products;
+
+-- ** Formas de chamar uma Function e como excluir uma Function
+
+-- Existem 3 formas de chamar uma função:
+
+-- I. Usando a notação por posição
+
+select analise_estoque(20, 50);
+
+-- II. Usando a notação por nome do parâmetro
+
+select analise_estoque(estoque_min := 20, estoque_max := 50);
+
+-- III. Usando a notação mista
+
+select analise_estoque(20, estoque_max := 50);
+
+-- Excluindo uma Function
+
+drop function if exists analise_estoque;
+
+-- ** Functions que retornam uma tabela
+
+-- É possível criar funções que retornam tabelas.
+
+-- A sintaxe para criar uma função deste tipo é a seguinte:
+
+/* 
+
+create or replace function nome_funcao(parametros)
+    returns table (lista_de_colunas)
+    language plpgsql
 as
 $$
 declare
     declaracao de variaveis
 begin
     codigos
+
+    return query
+
 end $$;
+
+*/
+
+-- Exemplo: Crie uma Function que retorna uma tabela contendo a lista de clientes que têm o contact_title = 'Owner'.
+-- A tabela retornada pela function deve conter apenas as colunas de id, nome, telefone e cargo dos clientes.
+
+select * from customers;
+
+create or replace function busca_clientes(title varchar)
+returns table
+		(
+			id customers.customer_id%type,
+			nome customers.contact_name%type,
+			telefone customers.phone%type,
+			cargo customers.contact_title%type
+		)
+language plpgsql
+as $$
+begin
+
+	return query
+		select
+			customer_id,
+			contact_name,
+			phone,
+			contact_title
+		from customers
+		where contact_title = title;
+
+end $$;
+
+select * from busca_clientes('Owner');
+
+drop function if exists busca_clientes;
+
+-- ## Transactions e Procedures ##
+
+-- ** O que é uma Transação?
+
+-- Uma transação em um banco de dados é uma unidade de trabalho que consiste em uma ou mais operações.
+
+/* Um exemplo clássico de uma transação é uma transferência bancária de uma conta para outra. Se o remetente transfere um valor
+de X reais a um destinatário, este destinatário deverá receber exatamente essa quantia de X reais, nem mais nem menos. */
+
+create table contas(
+    id int,
+    nome varchar(100),
+    saldo decimal
+);
+
+select * from contas;
+
+insert into contas(id, nome, saldo)
+values(1, 'Ana', 5000);
+
+begin transaction;
+insert into contas(id, nome, saldo)
+values(2, 'Bruno', 10000);
+
+commit;
+
+-- Para fazer com que as mudanças fiquem visíveis em outras sessões, é necessário utilizar o comando COMMIT.
+
+-- Já para desfazer uma transação, usamos o comando ROLLBACK.
+
+-- ** O que é e como criar uma Procedure
+
+/* Até aqui foi visto como criar blocos anônimos e functions. Porém, functions e blocos anônimos não são capazes de executar transações.
+Ou seja, dentro de uma function, não podemos iniciar uma transação, ou dar commit/rollback nela. */
+
+-- A sintaxe para criação de uma Procedure é a seguinte:
+
+/*
+create or replace procedure nome_procedure(parametros)
+language plpgsql
+as $$
+declare
+    declaracao de variaveis
+begin
+    corpo do código
+end $$;
+
+Para excluir, a sintaxe é:
+
+drop procedure nome_procedure;
+
+*/
+
+-- Exemplo: Crie uma Procedure que cadastra um novo cliente na tabela Contas.
+
+create or replace procedure cadastra_cliente(novo_id int, novo_cliente varchar(100), saldo_inicial decimal)
+language plpgsql
+as $$
+begin
+	insert into contas(id, nome, saldo) values
+	(novo_id, novo_cliente, saldo_inicial);
+	
+	commit;
+	
+end $$;
+
+call cadastra_cliente(3, 'Caio', 300);
+
+select * from contas;
+
+-- Exemplo 2: Crie uma Procedure que controle transferências bancárias entre duas contas.
+
+select * from contas;
+
+create or replace procedure transferencia(remetente int, destinatario int, valor decimal)
+language plpgsql
+as $$
+begin
+
+	-- subtrair o montante transferido pelo remetente
+	update contas
+	set saldo = saldo - valor
+	where id = remetente;
+	
+	-- adicionar o montante transferido para o destinatário
+	update contas
+	set saldo = saldo + valor
+	where id = destinatario;
+	
+	commit;
+
+end $$;
+
+call transferencia(1, 2, 500);
+
+select * from contas;
+
+
+
+
