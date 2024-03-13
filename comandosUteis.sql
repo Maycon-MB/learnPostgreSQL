@@ -583,4 +583,161 @@ select
     substring('ABC-9999', strpos('ABC-9999', '-') +1, 100),
     strpos('ABC-9999', '-');
 
-     
+-- ## Subquery ##
+
+-- O que é uma Subquery
+-- Subqueries no SQL são queries dentro de queries. É a possibilidade de reaproveitar o resultado de uma querie (select) dentro de outra.
+
+-- Exemplo: Quais produtos têm um preço acima da média?
+
+select avg(unit_price) from products; -- 28.833896...
+
+select * from Products
+where unit_price >= (select avg(unit_price) from products);
+
+-- Subquery: Cláusula WHERE
+--Exemplo: Quais pedidos têm uma quantidade vendida acima da quantidade vendida média?
+
+select * from order_details;
+
+select avg(quantity) from order_details; -- 23.81299...
+
+select * from order_details
+where quantity >= (select avg(quantity) from order_details);
+
+-- Subquery: Cláusula FROM
+-- Exemplo: Qual é a média de clientes de acordo com o cargo?
+
+select * from customers;
+
+select contact_title, count(*) as total_clientes from customers group by contact_title;
+
+select avg(total_clientes) from (select contact_title, count(*) as total_clientes from customers group by contact_title) tabela;
+
+-- Subquery: Cláusula SELECT
+-- Exemplo: Faça uma consulta à tabela products e adicione uma coluna que contenha a média geral de preço dos produtos
+
+select * from products;
+
+select *, (select avg(unit_price) from products) media_preco from products;
+
+-- Subquery: Corrigindo a análise de pediddos acima da média
+-- Exemplo: Quais pedidos têm uma quantidade vendida acima da quantidade vendida média?
+
+select * from order_details;
+
+select
+	order_id,
+	sum(quantity)
+from order_details
+group by order_id
+having sum(quantity) >=(
+	select
+		avg(total_vendido)
+	from (select 
+		order_id, 
+		sum(quantity) total_vendido 
+	from order_details 
+	group by order_id 
+	order by order_id) tabela);
+
+-- ## Variáveis e Blocos Anônimos ##
+
+-- Variáveis, Datatypes e Blocos Anônimos
+
+-- Variáveis são pedaços de memória onde armazenamos alguma informação. Uma variável está sempre associada a um tipo de dado em particular.
+
+-- Os tipos mais comuns de dados são:
+
+-- 1. Numéricos: int e decimal
+-- 2. Textos: varchar(n)
+-- 3. Datas: date
+
+-- Bloco Anônimo (Introdução)
+
+-- No PostgreSQL é possível criar os chamados Blocos Anônimos, blocos de códigos que são a base para Functions e Procedures.
+-- Abaixo, segue a estrutura de um bloco anônimo
+
+/*
+
+<<  label   >>
+declare
+    declaracao;
+begin
+    corpo do código;
+    select;
+    update;
+    etc...
+
+end label;
+
+*/
+
+-- Cada bloco possui duas sessões: declaração e corpo.
+-- A sessão de declaração é opcional e é onde declaramos todas as variáveis usadas no corpo do código.
+-- A sessão do corpo é obrigatória e é onde criamos os nossos códigos.
+-- Em ambas as sessões é obrigatório o uso do ponto e vírgula ao final de cada instrução.
+
+-- Exemplo de um bloco anônimo:
+
+do $$
+declare
+        nome varchar(100);
+        salario decimal;
+        data_contratacao date;
+begin
+    nome := 'André';
+    salario := 3500;
+    data_contratacao := '25-10-2018';
+    raise notice 'O funcionário % foi contratado em % e recebe um salário de %.', nome, data_contratacao, salario;
+end $$;
+
+-- Blocos Anônimos - Exemplos
+
+-- Exemplo 1: Criando uma calculadora simples de valor vendido. Utilize as variáveis 'quantidade', 'preco', 'valor_vendido' e 'vendedor' para isso
+
+do $$
+declare
+        quantidade int := 50;
+        preco decimal := 100;
+        valor_vendido int;
+        vendedor varchar(100) := 'Nome Teste';
+begin
+    valor_vendido := quantidade * preco;
+
+    raise notice 'O vendedor % vendeu um total de %.', vendedor, valor_vendido;
+end $$;
+
+-- Exemplo 2: Quantos produtos têm o preço acima da média de preços?
+
+do $$
+declare
+    media_preco decimal;
+    qtd_produtos_acima_media int;
+begin
+    media_preco = (select avg(unit_price) from products);
+    qtd_produtos_acima_media = (select count(*) from products where unit_price >= media_preco);
+
+    raise notice 'A quantidade de produtos com o preço acima da média é: % produtos.', qtd_produtos_acima_media;
+end $$;
+
+-- ## User-Defined Functions
+
+-- Criando uma Functions
+/* Além das funções de números, textos, datas, agregação, presentes no SQL, também é possível criar funções personalizadas que realizam
+algum tipo de cálculo. A essas funções damos o nome de User_Defined Functions. */
+
+-- A sintaxe para criar uma função é a seguinte:
+
+/*
+
+create or replace function nome_funcao(parametros)
+    returns tipo_dado
+    language plpsql
+as
+$$
+declare
+    declaracao de variaveis
+begin
+    codigos
+end $$;
