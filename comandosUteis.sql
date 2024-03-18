@@ -933,7 +933,7 @@ begin
 	where id = destinatario;
 	
 	commit;
-
+    
 end $$;
 
 call transferencia(1, 2, 500);

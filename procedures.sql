@@ -38,7 +38,32 @@ call cadastra_cliente(3, 'Caio', 300);
 
 select * from contas;
 
+-- Exemplo 2: Crie uma Procedure que controle transferências bancárias entre duas contas.
 
+select * from contas;
+
+create or replace procedure transferencia(remetente int, destinatario int, valor decimal)
+language plpgsql
+as $$
+begin
+
+	-- subtrair o montante transferido pelo remetente
+	update contas
+	set saldo = saldo - valor
+	where id = remetente;
+	
+	-- adicionar o montante transferido para o destinatário
+	update contas
+	set saldo = saldo + valor
+	where id = destinatario;
+	
+	commit;
+
+end $$;
+
+call transferencia(1, 2, 500);
+
+select * from contas;
 
 
 
