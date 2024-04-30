@@ -198,7 +198,7 @@ ON Tabela_A.Coluna1 = Tabela_B.Coluna1
 
 -- Ou usando Alias (Opção 2)
 
-SELECT ta.Coluna1, ta.Coluna2, ta.Coluna3, tb.Coluna4 FROM Tabela_A ta LEFT JOIN Tabela_B ta on ta.Coluna1 = tb.Coluna1
+SELECT ta.Coluna1, ta.Coluna2, ta.Coluna3, tb.Coluna4 FROM Tabela_A ta LEFT JOIN Tabela_B tb on ta.Coluna1 = tb.Coluna1
 
 -- LEFT JOIN X INNER JOIN X RIGHT JOIN - FULL JOIN
 
